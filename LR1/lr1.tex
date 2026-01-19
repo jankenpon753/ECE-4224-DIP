@@ -1,5 +1,5 @@
-\documentclass[12pt]{article}
-\usepackage[a4paper, total={6in, 9in}]{geometry}
+\documentclass[11pt]{article}
+\usepackage[a4paper, total={6.8in, 9.25in}]{geometry}
 \usepackage{graphicx}
 \graphicspath{ {./assets/images/output/} }
 \usepackage{caption}
@@ -12,25 +12,122 @@
 \usepackage{array}
 \usepackage{setspace}
 \usepackage{placeins}
+\usepackage{tcolorbox}
+\usepackage{caption}
 
-% \usepackage{lipsum}
+\definecolor{verbgray}{gray}{.95}
+\setminted{
+    bgcolor=verbgray,
+    baselinestretch=1,
+    fontsize=\footnotesize,
+    linenos,
+    breaklines=true,
+    breakanywhere=true,
+    xleftmargin=\parindent
+}
 
-\title{Study of Impulse, Step, and Ramp signals and their inter-relationships}
+\title{Basics of Digital Image Processing}
 \author{}
 \date{}
 
 \pagenumbering{gobble}
 \begin{document}
+\captionsetup{justification=centering}
 \input{dip_cover.tex}
-
 \pagebreak
 
 \tableofcontents
-
 \pagebreak
 \pagenumbering{arabic}
 \maketitle
 
+\section{Theory and Introduction}
+Digital Image Processing (DIP) involves computational techniques to enhance, analyze, and manipulate digital images, represented as 2D arrays of pixel intensities \cite{gonzalez2018}. It serves as a bridge between classical signal processing and computer vision, facilitating applications ranging from medical imaging to autonomous systems.
+
+Key fundamental concepts explored in this experiment include:
+\begin{itemize}
+    \item \textbf{Enhancement:} Improving visual quality via contrast stretching and histogram equalization.
+    \item \textbf{Restoration:} Removing noise and artifacts.
+    \item \textbf{Segmentation:} Partitioning images into meaningful regions.
+    \item \textbf{Feature Extraction:} Identifying edges and characteristics for analysis.
+\end{itemize}
+
+In this experiment, we implement basic image operations (resizing, color conversion, binary thresholding) and advanced manipulations (geometric transforms, channel isolation) using both MATLAB and Python environments \cite{mathworks2024}.
+
+
+\section{Methodology}
+
+\subsection{Basic Operations and Manipulations}
+In this section, we implement fundamental image processing techniques including reading, resizing, converting formats, and geometric manipulations using both MATLAB and Python.
+
+\subsubsection{MATLAB Part 1: Basic Operations}
+We began by utilizing the MATLAB Image Processing Toolbox to read the standard "Lenna.png" image. The image was resized to a lower resolution ($50 \times 50$) and converted into grayscale (luminance) and binary (black and white) formats to understand matrix representations of different image modes.
+
+\inputminted{matlab}{./assets/basic_part1.m}
+
+\subsubsection{MATLAB Part 2: Image Manipulation}
+We manipulated the spatial and color properties of the image. This involved separating color channels (isolating blue), merging distinct image types (grayscale and binary side-by-side), and applying geometric transformations such as horizontal flipping and 90-degree clockwise rotation.
+
+\inputminted{matlab}{./assets/basic_part2.m}
+
+\subsubsection{Python Implementation}
+Equivalent operations were performed in Python using the \texttt{OpenCV} and \texttt{NumPy} libraries. This validates the results across different computing environments, utilizing \texttt{cv2.threshold} for segmentation and array slicing for channel manipulation.
+
+\begin{multicols}{2}
+    \inputminted{python3}{./assets/basic.py}
+\end{multicols}
+
+% --- Outputs for Basic Ops ---
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.7\linewidth]{image_info.png}
+    \caption{Basic Image Information. Displays original image dimensions and data type, along with resized image dimensions and data type.}
+    \label{fig:basic_ops}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{basic.png}
+    \caption{Output of Basic Operations and Manipulations Using MATLAB \& Python. Top row: Original, Grayscale, Binary. Bottom row: Merged, Rotated, and Color Channel Modified images.}
+    \label{fig:basic_ops}
+\end{figure}
+
+
+\subsection{Conceptual Task (Masking \& Reconstruction)}
+\textbf{Task Description}
+\begin{enumerate}
+    \item Read the image and convert it to RGB and grayscale.
+    \item Identify objects based on colour intensity (detect all areas where the red channel is $> 150$).
+    \item Create a mask of the detected objects.
+    \item Apply transformation only on the masked objects:
+          \begin{enumerate}
+              \item Flip horizontally.
+              \item Rotate 90 degrees clockwise.
+              \item Increase intensity of the dominant colour channel by 50\%.
+          \end{enumerate}
+    \item Merge the transformed objects back into the original image, keeping the background unchanged.
+    \item Compute the area (in pixels) of each detected object.
+\end{enumerate}
+
+The following MATLAB code implements this logic, performing detection, isolation, transformation, and reconstruction in a single script.
+
+\begin{multicols}{2}
+    \inputminted{matlab}{./assets/task.m}
+\end{multicols}
+
+% --- Outputs for Conceptual Task ---
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.93\linewidth]{Conceptual Task Results.png}
+    \caption{Conceptual Task Results. The figure displays the original image, the generated red-channel mask, the isolated object, and the final reconstructed image where the object is transformed while the background remains static.}
+    \label{fig:conceptual_task}
+\end{figure}
+
+\section{Discussion}
+MATLAB's Image Processing Toolbox enabled high-level operations (binary conversion, rotation), while Python's \texttt{NumPy} and \texttt{OpenCV} required granular array manipulation, reinforcing that images are 2D numerical matrices. Both environments produced identical outputs, validating algorithmic consistency. The conceptual task demonstrated effective object segmentation using color thresholding (Red $> 150$), isolating Lenna's features without complex edge detection. The reconstruction step illustrated selective region editing via bitwise operations, a cornerstone technique in photo editing and medical imaging applications.
+
+\section{Conclusion}
+In this experiment, we successfully implemented fundamental Digital Image Processing operations in both MATLAB and Python, progressing from basic file handling to geometric transformations and selective region editing via binary masks. These core techniques—segmentation, feature extraction, and computational image manipulation—form the foundation for advanced applications in autonomous systems and medical imaging, while bridging towards modern deep learning approaches.
 
 
 \bibliographystyle{IEEEtran}

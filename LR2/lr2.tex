@@ -1,5 +1,5 @@
-\documentclass[12pt]{article}
-\usepackage[a4paper, total={6in, 9in}]{geometry}
+\documentclass[11pt]{article}
+\usepackage[a4paper, total={6.8in, 9.25in}]{geometry}
 \usepackage{graphicx}
 \graphicspath{ {./assets/images/output/} }
 \usepackage{caption}
@@ -12,25 +12,103 @@
 \usepackage{array}
 \usepackage{setspace}
 \usepackage{placeins}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{subcaption}
 
-% \usepackage{lipsum}
-
-\title{Study of Impulse, Step, and Ramp signals and their inter-relationships}
+\definecolor{verbgray}{gray}{.95}
+\setminted{
+    bgcolor=verbgray,
+    baselinestretch=1,
+    fontsize=\footnotesize,
+    linenos,
+    breaklines=true,
+    breakanywhere=true,
+    xleftmargin=\parindent
+}
+\title{Pixel-Level Manipulation and Histogram Analysis}
 \author{}
 \date{}
 
 \pagenumbering{gobble}
 \begin{document}
 \input{dip_cover.tex}
-
 \pagebreak
-
 \tableofcontents
-
 \pagebreak
 \pagenumbering{arabic}
 \maketitle
 
+\section{Theory and Introduction}
+At the fundamental level, a digital image is a matrix of numerical values. Manipulating an image involves accessing and modifying these values at specific coordinates, a technique known as spatial domain processing \cite{gonzalez2018}.
+
+This experiment focuses on two core concepts:
+\begin{itemize}
+    \item \textbf{Direct Pixel Access:} Modifying specific rows, columns, or regions of the image matrix to draw shapes or alter colors. In this experiment, we utilize the Python Imaging Library (PIL) to load images and NumPy to perform efficient matrix operations.
+    \item \textbf{Histogram Analysis:} A histogram is a graphical representation of the tonal distribution in a digital image \cite{gonzalez2018}. It plots the number of pixels for each tonal value (0--255). While modern libraries provide optimized functions for this, computing it manually via loops reinforces the understanding of the underlying data distribution algorithm.
+\end{itemize}
+
+\section{Methodology}
+
+\subsection{Pixel Manipulation: Crosshair and Color Bands}
+We manipulated the pixel arrays directly using NumPy slicing to alter specific spatial regions.
+
+\begin{enumerate}
+    \item \textbf{White Cross:} We calculated the center coordinates $(c_x, c_y)$ and assigned the value 255 to all channels in the central row and column, resulting in a white crosshair.
+    \item \textbf{Color Bands:} We defined a 100-pixel wide region around the center. Instead of painting a solid color, we isolated specific channels:
+          \begin{itemize}
+              \item \textbf{Vertical Red Band:} We set the Green and Blue channels to 0, leaving only the Red component of the original pixels visible.
+              \item \textbf{Horizontal Blue Band:} We set the Red and Green channels to 0, leaving only the Blue component visible.
+          \end{itemize}
+\end{enumerate}
+
+\subsection{Histogram Computation (Manual Approach)}
+For the histogram, we converted the image to grayscale (Luminance mode) and implemented the counting logic from scratch:
+\begin{enumerate}
+    \item Initialize an array of 256 zeros (bins).
+    \item Flatten the 2D grayscale image into a 1D array.
+    \item Iterate through every pixel value; use the pixel value as the index to increment the corresponding bin count.
+\end{enumerate}
+
+\subsection{Python Implementation}
+The following single script executes all three tasks and saves the results as PNG images.
+
+\begin{multicols}{2}
+    \inputminted{python3}{./assets/lab2.py}
+\end{multicols}
+
+\section{Results}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{task1_cross.png}
+        \caption{Task 1: White Cross}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{task2_bands.png}
+        \caption{Task 2: Red \& Blue Channel Bands}
+    \end{subfigure}
+    \caption{Pixel Manipulation Outputs}
+    \label{fig:manipulation}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{task3_histogram.png}
+    \caption{Task 3: Manual Histogram Analysis (Grayscale Frequency Distribution)}
+    \label{fig:histogram}
+\end{figure}
+
+\section{Discussion}
+The experiment demonstrated treating images as NumPy arrays. In Task 2, channel masking (setting specific channels to zero) retained luminosity while filtering colors—a technique fundamental to color processing. The manual histogram loop revealed the bimodal distribution in the Lenna image (light and dark regions). While educational, manual loops are slower than vectorized NumPy functions like `np.histogram` for large datasets.
+
+
+\section{Conclusion}
+This lab successfully demonstrated direct matrix manipulation and statistical analysis of digital images. We learned how to modify specific spatial regions using coordinate math and how to extract global image statistics through histogram computation. The use of NumPy slicing proved to be an efficient method for defining Regions of Interest (ROI) without the need for complex iterative loops.
 
 
 \bibliographystyle{IEEEtran}
