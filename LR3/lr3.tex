@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, total={6.8in, 9.25in}]{geometry}
+\usepackage{graphicx}
+\graphicspath{ {./assets/images/output/} }
+\usepackage{caption}
+\usepackage[english]{babel}
+\usepackage{titling}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{minted}
+\usepackage{multicol}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{placeins}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\definecolor{verbgray}{gray}{.95}
+\setminted{
+    bgcolor=verbgray,
+    baselinestretch=1,
+    fontsize=\footnotesize,
+    linenos,
+    breaklines=true,
+    breakanywhere=true,
+    xleftmargin=\parindent
+}
+\title{Pixel-Level Manipulation and Histogram Analysis}
+\author{}
+\date{}
+
+\pagenumbering{gobble}
+\begin{document}
+\captionsetup{justification=centering}
+\input{dip_cover.tex}
+\pagebreak
+\tableofcontents
+\pagebreak
+\pagenumbering{arabic}
+\maketitle
+
+\section{Theory and Introduction}
+In digital image processing, a fundamental operation is establishing relationships between pixels to define regions and boundaries. This relationship is governed by \textbf{connectivity}, which determines whether two pixels are considered "neighbors" \cite{gonzalez2018}. Finding the shortest path between two pixels is essential for tasks such as object labeling, region growing, and morphological processing.
+This experiment investigates three types of connectivity to determine the shortest path between a Start point $S(x,y)$ and an End point $E(x,y)$ in a binary image:
+
+\begin{itemize}
+    \item \textbf{4-Connectivity ($N_4$):} Two pixels are connected if they share a horizontal or vertical edge. Coordinates: $(x \pm 1, y)$ and $(x, y \pm 1)$.
+    \item \textbf{8-Connectivity ($N_8$):} Two pixels are connected if they share an edge or a corner (diagonal). Includes all neighbors in $N_4$ plus $(x \pm 1, y \pm 1)$.
+    \item \textbf{m-Connectivity ($N_m$):} A modification of 8-connectivity designed to eliminate ambiguous multiple paths. Two pixels $p$ and $q$ are m-connected if:
+          \begin{enumerate}
+              \item $q$ is in $N_4(p)$, OR
+              \item $q$ is in the diagonal neighborhood $N_D(p)$ \textbf{AND} their common 4-neighbors are empty (value 0) \cite{gonzalez2018}.
+          \end{enumerate}
+\end{itemize}
+
+To find the optimal path, the Breadth-First Search (BFS) algorithm is utilized. Since the distance between adjacent pixels is uniform (1 step), BFS guarantees finding the shortest path by exploring the image layer-by-layer \cite{cormen2009}.
+
+\section{Methodology}
+
+\subsection{Problem Definition}
+A $4 \times 4$ binary image matrix $I$ is analyzed, where $1$ represents the object and $0$ represents the background.
+$$
+    I = \begin{bmatrix}
+        1 & 0 & 1 & 0 \\
+        1 & 1 & 0 & 1 \\
+        1 & 0 & 1 & 0 \\
+        0 & 1 & 0 & 1
+    \end{bmatrix}
+$$
+\textbf{Task:} The shortest path from coordinate $(1,1)$ to $(4,4)$ (using 1-based indexing) is to be found for all three connectivity types.
+
+\subsection{Algorithm Implementation}
+The Python implementation follows these steps:
+\begin{enumerate}
+    \item \textbf{Initialization:} The image matrix is defined and coordinates are converted to 0-based indexing ($Start=(0,0), End=(3,3)$).
+    \item \textbf{Neighbor Selection:}
+          \begin{itemize}
+              \item For \textbf{4-Connectivity}, cardinal directions are checked only.
+              \item For \textbf{8-Connectivity}, cardinal and diagonal directions are checked.
+              \item For \textbf{m-Connectivity}, a specific condition is applied: diagonals are allowed only if the intersection of 4-neighbors is 0.
+          \end{itemize}
+    \item \textbf{Pathfinding (BFS):} A queue is initialized with the start node. The current path is iteratively dequeued, valid neighbors are checked, and new extended paths are enqueued until the destination is reached.
+    \item \textbf{Visualization:} The resulting paths are plotted on the matrix grid using Matplotlib.
+\end{enumerate}
+
+\subsection{Python Code}
+\begin{multicols}{2}
+    \inputminted{python3}{./assets/lab3.py}
+\end{multicols}
+
+
+\section{Results}
+The BFS algorithm was executed for each connectivity mode. The generated paths are visualized below:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{lab3_pathfinding.png}
+    \caption{Shortest Path Analysis Results. Left: 4-Connectivity fails to find a path. Center: 8-Connectivity finds the shortest diagonal route. Right: m-Connectivity finds a valid but slightly longer path to resolve ambiguity.}
+    \label{fig:results}
+\end{figure}
+
+\section{Discussion}
+Distinct results were yielded for each connectivity type, highlighting their geometric properties:
+
+\begin{itemize}
+    \item \textbf{4-Connectivity (No Path):} A path failed to be found by the algorithm. As seen in the matrix, the Start pixel $(0,0)$ and its immediate neighbors form a cluster that is isolated from the destination $(3,3)$ when diagonals are forbidden. The zeros at $(1,2)$ and $(2,1)$ effectively act as a wall.
+    \item \textbf{8-Connectivity (Length 4):} The shortest possible path was produced by this mode. By exploiting diagonal connections, the path moved directly from $(0,0) \to (1,1) \to (2,2) \to (3,3)$. This represents the Chebyshev distance.
+    \item \textbf{m-Connectivity (Length 5):} The m-connectivity path was found to be longer than the 8-connectivity path.
+          \begin{itemize}
+              \item The move $(0,0) \to (1,1)$ was \textbf{invalid} in m-connectivity because the shared neighbor $(1,0)$ is $1$ (not empty). This forced the path to take a 4-connected step first: $(0,0) \to (1,0) \to (1,1)$.
+              \item Subsequent moves $(1,1) \to (2,2)$ and $(2,2) \to (3,3)$ were valid diagonal m-connections because their shared neighbors were $0$.
+          \end{itemize}
+\end{itemize}
+
+\section{Conclusion}
+The impact of connectivity definitions on spatial analysis was successfully demonstrated in this lab. It was observed that 4-connectivity is the most restrictive, often failing to connect visually adjacent regions. 8-connectivity is the most permissive and yields the shortest geometric distance. m-connectivity serves as a robust hybrid, allowing diagonal connections only when necessary to prevent the ambiguity of multiple path options. Implementing these logic rules within a BFS framework effectively solved the shortest path problem.
+
+
+\bibliographystyle{IEEEtran}
+\renewcommand{\bibname}{References}
+\addcontentsline{toc}{section}{References}
+\bibliography{ref}
+
+\end{document}

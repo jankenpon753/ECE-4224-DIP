@@ -1,0 +1,105 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, total={6.8in, 9.25in}]{geometry}
+\usepackage{graphicx}
+\graphicspath{ {./assets/images/output/} }
+\usepackage{caption}
+\usepackage[english]{babel}
+\usepackage{titling}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{minted}
+\usepackage{multicol}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{placeins}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\definecolor{verbgray}{gray}{.95}
+\setminted{
+    bgcolor=verbgray,
+    baselinestretch=1,
+    fontsize=\footnotesize,
+    linenos,
+    breaklines=true,
+    breakanywhere=true,
+    xleftmargin=\parindent
+}
+\title{Study of Image Zooming and Interpolation Techniques}
+\author{}
+\date{}
+
+\pagenumbering{gobble}
+\begin{document}
+\captionsetup{justification=centering}
+\input{dip_cover.tex}
+\pagebreak
+\tableofcontents
+\pagebreak
+\pagenumbering{arabic}
+\maketitle
+
+\section{Theory and Introduction}
+Image zooming (scaling) involves resizing a digital image matrix. Since this operation creates new spatial locations where no pixel data previously existed, \textbf{interpolation} algorithms are required to estimate the intensity values of these new pixels based on the surrounding known data \cite{gonzalez2018}.
+
+This experiment compares two primary interpolation methods:
+\begin{itemize}
+    \item \textbf{Nearest Neighbor Interpolation:} Assigns the value of the spatially closest original pixel to the new pixel. It preserves original data values exactly but introduces aliasing (blockiness).
+    \item \textbf{Bilinear Interpolation:} Computes a weighted average of the four nearest neighbors using linear distance. It produces smooth gradients but acts as a low-pass filter, potentially blurring sharp edges.
+\end{itemize}
+
+\section{Methodology}
+A $4 \times 4$ matrix was defined with specific intensity values to represent a high-contrast pattern. Zooming algorithms were then manually implemented with a scaling factor of $s=4$.
+
+\subsection{Matrix Definition}
+The input matrix utilizes three distinct intensity levels: 10 (Dark), 50 (Mid-tone), and 200 (Bright).
+$$
+    I = \begin{bmatrix}
+        10  & 200 & 10  & 200 \\
+        200 & 50  & 200 & 50  \\
+        10  & 200 & 10  & 200 \\
+        200 & 50  & 200 & 50
+    \end{bmatrix}
+$$
+With $s=4$, the target output dimension is $(4 \times 4) \to (16 \times 16)$.
+
+\subsection{Python Implementation}
+The implementation avoids built-in resizing functions to demonstrate the underlying logic:
+\begin{enumerate}
+    \item \textbf{Nearest Neighbor:} The original matrix is iterated through, and each pixel value is replicated into a $4 \times 4$ block in the destination matrix.
+    \item \textbf{Bilinear:} The destination matrix is iterated through, coordinates are mapped back to the source, and the weighted sum of neighbors is calculated using the bilinear formula:
+          $$f(x,y) = (1-\alpha)(1-\beta)Q_{11} + \alpha(1-\beta)Q_{21} + (1-\alpha)\beta Q_{12} + \alpha\beta Q_{22}$$
+\end{enumerate}
+
+\begin{multicols}{2}
+    \inputminted{python3}{./assets/lab4.py}
+\end{multicols}
+
+\section{Results}
+The code generated $16 \times 16$ matrices visualized using the \texttt{viridis} colormap.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{lab4_color.png}
+    \caption{Zooming Analysis ($s=4$). Left: Original 4x4. Center: Nearest Neighbor simply expands pixels into large blocks. Right: Bilinear Interpolation generates intermediate colors (gradients) between the values 10, 50, and 200.}
+    \label{fig:zooming_results}
+\end{figure}
+
+\section{Discussion}
+The comparison highlights the trade-off between sharpness and smoothness:
+\begin{itemize}
+    \item \textbf{Nearest Neighbor:} The result is a direct magnification of the original grid. The output contains only the original values (10, 50, 200). It is visually jagged but preserves the exact contrast of the original data.
+    \item \textbf{Bilinear Interpolation:} The result introduces new intensity values not present in the original image. For example, between a pixel of value 200 and a pixel of value 50, the algorithm generates a smooth transition (e.g., 163, 126, 88). This creates a visually softer image, effectively smoothing out the "checkerboard" pattern.
+\end{itemize}
+
+\section{Conclusion}
+The mathematical foundations of image resampling were validated in this experiment. By implementing the algorithms manually, it was observed that Nearest Neighbor interpolation is computationally efficient and preserves discrete data types, while Bilinear interpolation provides superior visual quality for continuous-tone images by estimating intermediate intensities.
+
+
+\bibliographystyle{IEEEtran}
+\renewcommand{\bibname}{References}
+\addcontentsline{toc}{section}{References}
+\bibliography{ref}
+
+\end{document}
