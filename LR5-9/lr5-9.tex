@@ -229,29 +229,44 @@ The utility of compound morphological operations was successfully demonstrated. 
 \end{center}
 
 \subsection{Theory and Introduction}
-While the Hit-or-Miss Transform is useful for strict, pixel-perfect binary shapes, real-world scanned images often require more robust pattern recognition techniques. \textbf{Template Matching} is utilized to find areas of an image that are similar to a smaller template patch \cite{gonzalez2018}.
-
-To measure this similarity, \textbf{Normalized Cross-Correlation (NCC)} is commonly employed. NCC slides the template across the main image and calculates a correlation coefficient at each position. The normalized equation ensures that the detection is robust against global lighting or contrast variations, returning a value between -1 (perfect mismatch) and 1 (perfect match).
-$$
-    R(x,y) = \frac{\sum_{x',y'} (T(x',y') - \bar{T})(I(x+x',y+y') - \bar{I})}{\sqrt{\sum_{x',y'} (T(x',y') - \bar{T})^2 \sum_{x',y'} (I(x+x',y+y') - \bar{I})^2}}
-$$
-where $T$ is the template, $I$ is the image, and the overbars denote the mean values of the respective regions.
+Pattern recognition in digital images can be approached through morphological or statistical methods \cite{gonzalez2018}. This experiment compares two distinct techniques:
+\begin{itemize}
+    \item \textbf{Hit-or-Miss Transform (HMT):} A strict morphological tool used for exact shape detection in binary images. It utilizes a composite structuring element: $B_1$ to detect the foreground shape (the "hit"), and $B_2$ to detect the local background (the "miss"). A pixel is activated only if both conditions perfectly match.
+          $$A \circledast B = (A \ominus B_1) \cap (A^c \ominus B_2)$$
+    \item \textbf{Template Matching (Normalized Cross-Correlation):} A statistical method utilized for robust feature detection, especially in real-world scans. It slides a template across the image and calculates a correlation coefficient $[-1, 1]$. It is robust against noise and lighting variations.
+\end{itemize}
 
 \subsection{Methodology}
-A real-world scanned text image was processed to detect specific alphabetical characters. A Region of Interest (ROI) containing the target letter was interactively selected and used as the mathematical template to search the broader image.
+The two methods were implemented and evaluated on different types of datasets to demonstrate their respective strengths.
 
-\subsubsection{Image Preparation and ROI Selection}
-The input image was converted to grayscale and binarized using Otsu's thresholding method to ensure consistent matching. An interactive UI was triggered, allowing the user to draw a bounding box around the letter "e" to define the template matrix.
+\subsubsection*{Part A: Morphological HMT}
+A $10 \times 10$ synthetic binary matrix was defined containing various shapes. $SE_1$ was defined as a $2 \times 2$ matrix of 1s to detect a square, while $SE_2$ was defined as a $2 \times 2$ matrix of 0s. The SciPy \verb|binary_hit_or_miss| function was utilized to strictly isolate the target geometry.
 
-\subsubsection{Python Implementation}
-The OpenCV library function \verb|cv2.matchTemplate| was utilized with the \verb|TM_CCOEFF_NORMED| correlation method. To prevent a single letter from generating multiple overlapping detections, Non-Maximum Suppression (NMS) was applied using \verb|peak_local_max|. This isolated only the highest correlation peaks that exceeded a threshold of $0.8$ and enforced a minimum distance between detections.
+\subsubsection*{Part B: Template Matching}
+A real-world scanned text image was processed. The input was binarized using Otsu's thresholding. A Region of Interest (ROI) containing the letter "e" was defined as the template. The OpenCV \verb|matchTemplate| function was utilized, followed by Non-Maximum Suppression (NMS) via \verb|peak_local_max| to isolate unique detection peaks above a $0.8$ threshold.
 
+\subsection{Python Implementations}
+The implementations for both approaches are provided below.
+
+\subsubsection*{HMT Implementation}
+\begin{multicols}{2}
+    \inputminted{python3}{./assets/lab9.py}
+\end{multicols}
+
+\subsubsection*{Template Matching Implementation}
 \begin{multicols}{2}
     \inputminted{python3}{./assets/lab9_v2.py}
 \end{multicols}
 
 \subsection{Results}
-The template matching algorithm successfully scanned the document and located the requested pattern.
+The detection algorithms were executed, and the localized patterns were visualized.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{lab9.png}
+    \caption{Hit-or-Miss Transform Results. Left: Synthetic $10 \times 10$ matrix containing $2 \times 2$ squares alongside larger rectangles and noise. Right: The single coordinate representing the exact location of the strict $2 \times 2$ match.}
+    \label{fig:hmt_synthetic}
+\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -263,15 +278,19 @@ The template matching algorithm successfully scanned the document and located th
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{lab9_v2.png}
-    \caption{Template Matching Results. Left: The extracted $20 \times 17$ binary template of the letter "e". Right: The detection results, showing 5 localized instances marked with red bounding boxes and yellow center coordinates.}
+    \caption{Template Matching Results. Left: The extracted binary template of the letter "e". Right: The detection results, showing 5 localized instances marked with red bounding boxes despite surrounding text noise.}
     \label{fig:tm_results}
 \end{figure}
 
 \subsection{Discussion}
-The Normalized Cross-Correlation approach proved highly effective for feature detection in a noisy, real-world scan. As seen in the results, all 5 instances of the lowercase "e" in the horizontal text were perfectly isolated. The algorithm successfully ignored similar geometric shapes, such as the rounded bowls in the letters "d" and "a", because their cross-correlation coefficients fell below the $0.8$ threshold. Furthermore, the application of Non-Maximum Suppression ensured that exactly one bounding box was drawn per letter, effectively filtering out redundant local peaks.
+The comparison highlighted the fundamental differences between morphological and statistical pattern recognition.
+
+In Part A, the stringent matching criteria of the HMT were clearly demonstrated. The transform successfully isolated the exact $2 \times 2$ square but completely ignored larger blocks of 1s (such as the $2 \times 3$ rectangle). A positive result was only returned where the arrangement of 1s and surrounding 0s strictly matched the combined constraints of $SE_1$ and $SE_2$.
+
+In Part B, the Normalized Cross-Correlation approach proved highly effective for feature detection in a noisy scan. All 5 instances of the lowercase "e" were perfectly isolated. Unlike the HMT, the statistical approach successfully ignored similar geometric shapes (such as the rounded bowls in the letters "d" and "a") because their cross-correlation coefficients fell below the 0.8 threshold, demonstrating flexibility that strict morphological operators lack.
 
 \subsection{Conclusion}
-The robustness of template matching via Normalized Cross-Correlation was validated for optical character recognition tasks. It was demonstrated that by combining correlation mapping with peak-finding and non-maximum suppression, highly specific, complex morphological patterns can be accurately localized within a broader image matrix without the strict pixel-perfect constraints of traditional morphological transforms.
+The strengths of both pattern recognition techniques were validated. It was shown that the Hit-or-Miss Transform is an extremely precise tool for structural analysis in pure binary matrices where pixel-perfect accuracy is required. Conversely, Template Matching via Normalized Cross-Correlation was proven to be superior for Optical Character Recognition (OCR) tasks and real-world image processing, where robustness against noise and slight morphological variations is necessary.
 
 % REFERENCES
 \bibliographystyle{IEEEtran}
