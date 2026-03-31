@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from PIL import Image
+from scipy.ndimage import binary_dilation, binary_erosion
 
 # 1. Define Image and Structuring Element (SE)
 img_exp7 = np.array(
@@ -50,13 +51,20 @@ def manual_dilate(img, se):
     return out
 
 
+# Using scipy imdilate equivalent
+# dilated_img_scipy = binary_dilation(img_exp7, structure=SE).astype(np.uint8)
+# eroded_img_scipy = binary_erosion(img_exp7, structure=SE).astype(np.uint8)
+
+
 eroded_img = manual_erode(img_exp7, SE)
 dilated_img = manual_dilate(img_exp7, SE)
 
 print("\n--- Experiment 7: Morphological Operations ---")
 print("Original 7x7:\n", img_exp7)
-print("Eroded (Shrinks 1s):\n", eroded_img)
 print("Dilated (Expands 1s):\n", dilated_img)
+print("Eroded (Shrinks 1s):\n", eroded_img)
+# print("Eroded (Shrinks 1s):\n", eroded_img_scipy)
+# print("Dilated (Expands 1s):\n", dilated_img_scipy)
 
 # Save the image
 output_dir = "./images/output"
@@ -73,7 +81,7 @@ ax1.set_xticks(np.arange(-0.5, img_exp7.shape[1], 1), minor=True)
 ax1.set_yticks(np.arange(-0.5, img_exp7.shape[0], 1), minor=True)
 ax1.grid(which="minor", color="red", linestyle="-", linewidth=0.5)
 plt.subplot(1, 3, 2)
-plt.imshow(np.round(dilated_img).astype(np.uint8), cmap="gray")
+plt.imshow(dilated_img, cmap="gray", vmin=0, vmax=1)
 plt.title("Dilated Image")
 # Add gridlines
 ax2 = plt.gca()

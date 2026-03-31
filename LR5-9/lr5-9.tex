@@ -229,45 +229,51 @@ The utility of compound morphological operations was successfully demonstrated. 
 \end{center}
 
 \subsection{Theory and Introduction}
-The Hit-or-Miss Transform (HMT) is a basic morphological tool used for shape detection and pattern recognition within binary images. It utilizes a composite structuring element containing two parts: $B_1$ to detect the foreground shape (the "hit"), and $B_2$ to detect the local background (the "miss") \cite{gonzalez2018}.
+While the Hit-or-Miss Transform is useful for strict, pixel-perfect binary shapes, real-world scanned images often require more robust pattern recognition techniques. \textbf{Template Matching} is utilized to find areas of an image that are similar to a smaller template patch \cite{gonzalez2018}.
+
+To measure this similarity, \textbf{Normalized Cross-Correlation (NCC)} is commonly employed. NCC slides the template across the main image and calculates a correlation coefficient at each position. The normalized equation ensures that the detection is robust against global lighting or contrast variations, returning a value between -1 (perfect mismatch) and 1 (perfect match).
 $$
-    A \circledast B = (A \ominus B_1) \cap (A^c \ominus B_2)
+    R(x,y) = \frac{\sum_{x',y'} (T(x',y') - \bar{T})(I(x+x',y+y') - \bar{I})}{\sqrt{\sum_{x',y'} (T(x',y') - \bar{T})^2 \sum_{x',y'} (I(x+x',y+y') - \bar{I})^2}}
 $$
-A pixel is set to 1 in the output only if the foreground SE perfectly matches the image foreground, and the background SE perfectly matches the image background.
+where $T$ is the template, $I$ is the image, and the overbars denote the mean values of the respective regions.
 
 \subsection{Methodology}
-A region of interest (ROI) was cropped from a larger image, and two specific structuring elements were configured to isolate a particular geometric pattern.
+A real-world scanned text image was processed to detect specific alphabetical characters. A Region of Interest (ROI) containing the target letter was interactively selected and used as the mathematical template to search the broader image.
 
-\subsubsection{Matrix Definition}
-A region of interest was defined containing various noise elements and a few precise $2 \times 2$ square patterns. $SE_1$ was defined as a $2 \times 2$ matrix of 1s (to detect the square), while $SE_2$ was defined as the surrounding background elements (0s) necessary to ensure isolation.
+\subsubsection{Image Preparation and ROI Selection}
+The input image was converted to grayscale and binarized using Otsu's thresholding method to ensure consistent matching. An interactive UI was triggered, allowing the user to draw a bounding box around the letter "e" to define the template matrix.
 
 \subsubsection{Python Implementation}
-The SciPy \verb|binary_hit_or_miss| function (equivalent to MATLAB's \verb|bwhitmiss|) was utilized. The algorithm simultaneously applies erosion using $SE_1$ on the image and $SE_2$ on the complement of the image, returning the logical AND of the results.
+The OpenCV library function \verb|cv2.matchTemplate| was utilized with the \verb|TM_CCOEFF_NORMED| correlation method. To prevent a single letter from generating multiple overlapping detections, Non-Maximum Suppression (NMS) was applied using \verb|peak_local_max|. This isolated only the highest correlation peaks that exceeded a threshold of $0.8$ and enforced a minimum distance between detections.
 
 \begin{multicols}{2}
-    \inputminted{python3}{./assets/lab9.py}
+    \inputminted{python3}{./assets/lab9_v2.py}
 \end{multicols}
 
 \subsection{Results}
-The transform successfully isolated the exact locations of the requested geometric patterns.
+The template matching algorithm successfully scanned the document and located the requested pattern.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{lab9.png}
-    \caption{Hit-or-Miss Transform. Left: The original noisy matrix containing various shapes. Right: The single coordinates (hits) where the target $2 \times 2$ pattern was perfectly isolated.}
-    \label{fig:hmt}
+    \includegraphics[width=0.3\linewidth]{lab9_input.png}
+    \caption{Interactive ROI Selection. The user defines the target template by drawing a bounding box around the specific pattern (the letter "e") directly on the binarized input image.}
+    \label{fig:tm_input}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{lab9_v2.png}
+    \caption{Template Matching Results. Left: The extracted $20 \times 17$ binary template of the letter "e". Right: The detection results, showing 5 localized instances marked with red bounding boxes and yellow center coordinates.}
+    \label{fig:tm_results}
 \end{figure}
 
 \subsection{Discussion}
-The stringent matching criteria of the HMT were clearly demonstrated. The transform ignored $2 \times 3$ rectangles and isolated 1s because they failed either the "hit" condition (foreground mismatch) or the "miss" condition (background mismatch). A positive result was only returned at the anchor point where the specific arrangement of 1s and surrounding 0s strictly matched the combined constraints of $SE_1$ and $SE_2$.
+The Normalized Cross-Correlation approach proved highly effective for feature detection in a noisy, real-world scan. As seen in the results, all 5 instances of the lowercase "e" in the horizontal text were perfectly isolated. The algorithm successfully ignored similar geometric shapes, such as the rounded bowls in the letters "d" and "a", because their cross-correlation coefficients fell below the $0.8$ threshold. Furthermore, the application of Non-Maximum Suppression ensured that exactly one bounding box was drawn per letter, effectively filtering out redundant local peaks.
 
 \subsection{Conclusion}
-The Hit-or-Miss transform was validated as an extremely precise tool for structural analysis. It was shown that by carefully defining both the foreground and background structuring elements, specific patterns and features can be localized within complex binary images.
-
+The robustness of template matching via Normalized Cross-Correlation was validated for optical character recognition tasks. It was demonstrated that by combining correlation mapping with peak-finding and non-maximum suppression, highly specific, complex morphological patterns can be accurately localized within a broader image matrix without the strict pixel-perfect constraints of traditional morphological transforms.
 
 % REFERENCES
-
-\pagebreak
 \bibliographystyle{IEEEtran}
 \renewcommand{\bibname}{References}
 \addcontentsline{toc}{section}{References}
